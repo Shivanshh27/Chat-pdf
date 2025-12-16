@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { auth } from "@clerk/nextjs/server";
 
 import Link from "next/link";
-import FileUpload from "@/components/ui/FileUpload";
+import FileUpload from "@/components/FileUpload";
 import { LogIn } from "lucide-react";
 export default async function Home() {
   const { userId } = await auth();
