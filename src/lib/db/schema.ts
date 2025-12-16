@@ -46,4 +46,3 @@ export const userSubscriptions = pgTable("user_subscriptions", {
 
 // drizzle-orm
 // drizzle-kit
- 
