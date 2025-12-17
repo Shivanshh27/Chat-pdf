@@ -1,7 +1,11 @@
+
 {
   "name": "ai-chat-pdf",
   "version": "0.1.0",
   "private": true,
+  "overrides": {
+    "@ai-sdk/provider": "1.0.4"
+  },
   "scripts": {
     "dev": "set NODE_OPTIONS=--max-old-space-size=8192 && next dev",
     "build": "next build",

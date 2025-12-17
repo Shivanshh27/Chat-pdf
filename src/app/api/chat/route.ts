@@ -1,5 +1,6 @@
 import { streamText } from "ai";
 import { openai } from "@ai-sdk/openai";
+
 import { getContext } from "@/lib/context";
 import { db } from "@/lib/db";
 import { chats, messages as _messages } from "@/lib/db/schema";
@@ -21,16 +22,17 @@ export async function POST(req: Request) {
     const fileKey = chat[0].fileKey;
     const lastMessage = messages[messages.length - 1];
 
-    // 2️⃣ Save user message FIRST (no onStart in v5)
+    // 2️⃣ Save user message
     await db.insert(_messages).values({
       chatId,
       role: "user",
       content: lastMessage.content,
     });
 
-    // 3️⃣ Build context
+    // 3️⃣ Get context
     const context = await getContext(lastMessage.content, fileKey);
 
+    // 4️⃣ System prompt
     const systemPrompt = `
 You are a helpful AI assistant.
 Answer ONLY using the provided context.
@@ -43,13 +45,13 @@ If the answer is not in the context, say:
 "I'm sorry, but I don't know the answer to that question."
 `;
 
-    // 4️⃣ Stream response
+    // 5️⃣ Stream AI response
     const result = await streamText({
-      model: openai("gpt-3.5-turbo"),
+      model: openai.chat("gpt-4o-mini"),
       system: systemPrompt,
       messages: messages.filter((m: any) => m.role === "user"),
-      onFinish: async ({ text }) => {
-        // Save assistant reply (mapped to "system")
+
+      onFinish: async ({ text }: { text: string }) => {
         await db.insert(_messages).values({
           chatId,
           role: "system",
@@ -58,8 +60,8 @@ If the answer is not in the context, say:
       },
     });
 
-    // ✅ v5 response
-    return new Response(result.textStream);
+    // 7️⃣ Return stream
+    return result.toDataStreamResponse();
   } catch (error) {
     console.error("❌ /api/chat error:", error);
     return NextResponse.json(
