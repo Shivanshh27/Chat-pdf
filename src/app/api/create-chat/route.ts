@@ -6,17 +6,24 @@ import { auth } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 // /api/create-chat
-export async function POST(req: Request, res: Response) {
+export async function POST(req: Request) {
   const { userId } = await auth();
+
   if (!userId) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
+
   try {
     const body = await req.json();
     const { file_key, file_name } = body;
-    console.log(file_key, file_name);
+
+    if (!file_key || !file_name) {
+      return NextResponse.json({ error: "missing file data" }, { status: 400 });
+    }
+
     await loadS3IntoPinecone(file_key);
-    const chat_id = await db
+
+    const chat = await db
       .insert(chats)
       .values({
         fileKey: file_key,
@@ -24,18 +31,11 @@ export async function POST(req: Request, res: Response) {
         pdfUrl: getS3Url(file_key),
         userId,
       })
-      .returning({
-        insertedId: chats.id,
-      });
+      .returning({ id: chats.id });
 
-    return NextResponse.json(
-      {
-        chat_id: chat_id[0].insertedId,
-      },
-      { status: 200 }
-    );
+    return NextResponse.json({ chat_id: chat[0].id }, { status: 200 });
   } catch (error) {
-    console.error(error);
+    console.error("create-chat error:", error);
     return NextResponse.json(
       { error: "internal server error" },
       { status: 500 }
