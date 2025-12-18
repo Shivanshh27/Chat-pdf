@@ -8,6 +8,7 @@ import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 const return_url = process.env.NEXT_BASE_URL + "/";
+export const runtime = "nodejs";
 
 export async function GET() {
   try {
